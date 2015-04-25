@@ -4,18 +4,16 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
 import at.syssec.ss15.ss.ab2.ElGamalSig;
 
 public class ElGamalSigImpl implements ElGamalSig {
 
-
     @Override
     public BigInteger generatePrime(int n) {
-        BigInteger p = null;
+        BigInteger p;
         do {
             BigInteger q = BigInteger.probablePrime(n, new Random(System.currentTimeMillis()));
-            p = q.multiply(BigInteger.valueOf(2L)).add(BigInteger.ONE);
+            p = q.multiply(BigInteger.valueOf(2)).add(BigInteger.ONE);
         } while (!p.isProbablePrime(1000));
         return p;
     }
@@ -30,7 +28,6 @@ public class ElGamalSigImpl implements ElGamalSig {
 
             for (BigInteger t : primTeiler) {
                 if (g.mod(p.subtract(BigInteger.ONE).divide(t)).compareTo(BigInteger.ONE) == 0) {
-
                     isGenerator = false;
                 }
             }
@@ -44,35 +41,31 @@ public class ElGamalSigImpl implements ElGamalSig {
                 return g;
             }
         }
-
-
         return null;
     }
 
     private List<BigInteger> findPrimteiler(BigInteger p) {
         List<BigInteger> primTeiler = new ArrayList<BigInteger>();
-        BigInteger prim = BigInteger.valueOf(2L);
+        BigInteger prim = BigInteger.valueOf(2);
         BigInteger pTemp = p.add(BigInteger.ZERO);
         //Suche nur notmendig bis n/2 (optimale wäre sqrt(n), ~.~)
-        while (prim.compareTo(p.divide(BigInteger.valueOf(2L))) <= 0) {
+        while (prim.compareTo(p.divide(BigInteger.valueOf(2))) <= 0) {
             if (pTemp.mod(prim).equals(BigInteger.ZERO)) {
                 primTeiler.add(prim);
                 pTemp = pTemp.divide(prim);
             }
             prim = prim.nextProbablePrime();
         }
-
         return primTeiler;
     }
 
     @Override
     public BigInteger generatePrivatePart(BigInteger p) {
-        BigInteger max = p.subtract(BigInteger.valueOf(2L));
+        BigInteger max = p.subtract(BigInteger.valueOf(2));
         BigInteger d;
         do {
             d = new BigInteger(max.bitLength(), new Random(System.currentTimeMillis()));
-        } while (d.compareTo(BigInteger.valueOf(2L)) < 0);
-
+        } while (d.compareTo(BigInteger.valueOf(2)) < 0);
         return d;
     }
 
@@ -97,19 +90,13 @@ public class ElGamalSigImpl implements ElGamalSig {
             s = ((new BigInteger(message).subtract(d.multiply(r))).multiply(kInverse)).mod(p.subtract(BigInteger.ONE));
             s = s.mod(p.subtract(BigInteger.ONE));
         } while (s.compareTo(BigInteger.ZERO) == 0);
-
         return new ElGamalSig.ElGamalSignature(r.toByteArray(), s.toByteArray());
-
     }
 
     @Override
     public boolean verify(byte[] message, ElGamalSignature sig, BigInteger p, BigInteger g, BigInteger e) {
-
         BigInteger r = new BigInteger(sig.getR());
-        Integer rInt = r.intValue();
-
         BigInteger s = new BigInteger(sig.getS());
-        Integer sInt = s.intValue();
         // 0 < r
         if (r.compareTo(BigInteger.ZERO) <= 0) {
             return false;
@@ -126,9 +113,7 @@ public class ElGamalSigImpl implements ElGamalSig {
         if (p.subtract(BigInteger.ONE).compareTo(s) <= 0) {
             return false;
         }
-
         BigInteger leftSide = g.modPow(new BigInteger(message), p);
-
 		BigInteger rightSide;
         BigInteger temp1 = e.modPow(r, p);
         BigInteger temp2 = r.modPow(s, p);
@@ -136,34 +121,6 @@ public class ElGamalSigImpl implements ElGamalSig {
         BigInteger produkt = temp1.multiply(temp2);
         rightSide = produkt.mod(p);
 
-
-		if(leftSide.compareTo(rightSide) == 0) {
-			return true;
-		}
-
-//		BigInteger x = new BigInteger(message);
-//		BigInteger r = new BigInteger(sig.getR());
-//		BigInteger s = new BigInteger(sig.getS());
-//		System.out.println("Message: " + x);
-//		System.out.println("s: " + s);
-//		System.out.println("r: " + r);
-//		BigInteger mes = g.modPow(x,p);
-//		BigInteger signatur = (e.modPow(r,p).multiply(r.modPow(s,p))).mod(p);
-//		System.out.println("Mess: " + mes);
-//		System.out.println("Sign: " + signatur);
-//
-//		return mes.compareTo(signatur) == 0;
-        return false;
+        return leftSide.compareTo(rightSide) == 0;
     }
-
-    private BigInteger pow(BigInteger base, BigInteger exponent) {
-        BigInteger result = BigInteger.ONE;
-        while (exponent.signum() > 0) {
-            if (exponent.testBit(0)) result = result.multiply(base);
-            base = base.multiply(base);
-            exponent = exponent.shiftRight(1);
-        }
-        return result;
-    }
-
 }
